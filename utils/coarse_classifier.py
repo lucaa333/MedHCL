@@ -21,7 +21,7 @@ class CoarseAnatomicalClassifier(nn.Module):
         dropout_rate (float): Dropout rate (default: 0.3)
     """
     
-    def __init__(self, architecture='base', num_regions=3, dropout_rate=0.3):
+    def __init__(self, architecture='base', num_regions=3, dropout_rate=0.3, region_names=None):
         super(CoarseAnatomicalClassifier, self).__init__()
         
         self.num_regions = num_regions
@@ -40,12 +40,15 @@ class CoarseAnatomicalClassifier(nn.Module):
                 dropout_rate=dropout_rate
             )
         
-        # Region mapping
-        self.region_names = {
-            0: 'brain',
-            1: 'abdomen', 
-            2: 'chest'
-        }
+        # Region mapping - use provided mapping or default
+        if region_names is None:
+            self.region_names = {
+                0: 'brain',
+                1: 'abdomen', 
+                2: 'chest'
+            }
+        else:
+            self.region_names = region_names
     
     def forward(self, x):
         """
