@@ -24,11 +24,12 @@ class BasicBlock3D(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, 
                                stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm3d(out_channels)
+        # Use track_running_stats=True but handle batch_size=1 gracefully
+        self.bn1 = nn.BatchNorm3d(out_channels, track_running_stats=True)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=3,
                                stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm3d(out_channels)
+        self.bn2 = nn.BatchNorm3d(out_channels, track_running_stats=True)
         self.downsample = downsample
     
     def forward(self, x):
@@ -155,6 +156,12 @@ class ResNet3D(nn.Module):
                 nn.init.constant_(m.bias, 0)
     
     def forward(self, x):
+        # Handle batch_size=1 during training (for hierarchical routing)
+        # Temporarily set BatchNorm to eval mode if batch size is 1
+        single_sample = (x.size(0) == 1) and self.training
+        if single_sample:
+            self.eval()
+        
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -169,6 +176,10 @@ class ResNet3D(nn.Module):
         x = torch.flatten(x, 1)
         x = self.dropout(x)
         x = self.fc(x)
+        
+        # Restore training mode if we temporarily switched
+        if single_sample:
+            self.train()
         
         return x
 

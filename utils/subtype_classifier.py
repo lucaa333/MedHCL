@@ -5,6 +5,7 @@ Stage 3: Subtype classifier for detailed disease categorization
 import torch
 import torch.nn as nn
 from .base_model import Base3DCNN
+from .cnn_3d_models import get_3d_model
 
 
 class SubtypeClassifier(nn.Module):
@@ -18,20 +19,31 @@ class SubtypeClassifier(nn.Module):
     Args:
         pathology_name (str): Name of the pathology
         num_subtypes (int): Number of subtype classes
+        architecture (str): Model architecture ('base', 'resnet18_3d', 'resnet34_3d', 
+                           'resnet50_3d', 'densenet121_3d', 'efficientnet3d_b0')
         dropout_rate (float): Dropout rate
     """
     
-    def __init__(self, pathology_name, num_subtypes, dropout_rate=0.3):
+    def __init__(self, pathology_name, num_subtypes, architecture='resnet18_3d', dropout_rate=0.3):
         super(SubtypeClassifier, self).__init__()
         
         self.pathology_name = pathology_name
         self.num_subtypes = num_subtypes
+        self.architecture = architecture
         
-        self.model = Base3DCNN(
-            in_channels=1,
-            num_classes=num_subtypes,
-            dropout_rate=dropout_rate
-        )
+        # Select model architecture
+        if architecture == 'base':
+            self.model = Base3DCNN(
+                in_channels=1,
+                num_classes=num_subtypes,
+                dropout_rate=dropout_rate
+            )
+        else:
+            self.model = get_3d_model(
+                model_name=architecture,
+                num_classes=num_subtypes,
+                dropout_rate=dropout_rate
+            )
     
     def forward(self, x):
         """
@@ -70,7 +82,7 @@ class HierarchicalSubtypeNetwork(nn.Module):
     models for identifying subtypes within each pathology category.
     """
     
-    def __init__(self, subtype_configs, dropout_rate=0.3):
+    def __init__(self, subtype_configs, architecture='resnet18_3d', dropout_rate=0.3):
         """
         Args:
             subtype_configs (dict): Nested dict mapping regions -> pathologies -> num_subtypes
@@ -84,11 +96,13 @@ class HierarchicalSubtypeNetwork(nn.Module):
                         'tumor': 3
                     }
                 }
+            architecture (str): Model architecture for all subtype classifiers
             dropout_rate (float): Dropout rate
         """
         super(HierarchicalSubtypeNetwork, self).__init__()
         
         self.subtype_configs = subtype_configs
+        self.architecture = architecture
         self.classifiers = nn.ModuleDict()
         
         # Create classifiers for each pathology
@@ -98,6 +112,7 @@ class HierarchicalSubtypeNetwork(nn.Module):
                 self.classifiers[key] = SubtypeClassifier(
                     pathology_name=pathology_name,
                     num_subtypes=num_subtypes,
+                    architecture=architecture,
                     dropout_rate=dropout_rate
                 )
     

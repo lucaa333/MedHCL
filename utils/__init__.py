@@ -4,8 +4,12 @@ Utilities package for hierarchical medical image classification
 
 # Model architectures
 from .base_model import Base3DCNN, Enhanced3DCNN, ResidualBlock3D
-from .coarse_classifier import CoarseAnatomicalClassifier, MultiScaleCoarseClassifier
-from .fine_classifier import FinePathologyClassifier, RegionSpecificPathologyNetwork, AttentionFineClassifier
+from .cnn_3d_models import (
+    resnet18_3d, resnet34_3d, resnet50_3d,
+    densenet121_3d, efficientnet3d_b0, get_3d_model
+)
+from .coarse_classifier import CoarseAnatomicalClassifier
+from .fine_classifier import FinePathologyClassifier, RegionSpecificPathologyNetwork
 from .subtype_classifier import SubtypeClassifier, HierarchicalSubtypeNetwork
 from .hierarchical_model import HierarchicalClassificationModel
 
